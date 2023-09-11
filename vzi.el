@@ -132,9 +132,14 @@
   :type 'string
   :group 'vzi-behaviors)
 
+(defcustom vzi-row-select nil
+  "Function used to select rows when extracting a table: (row, i) => row | nil."
+  :type 'function
+  :group 'vzi-behaviors)
+
 (defmacro vzi-eval-with-let-headers (&rest body)
   "Evaluate BODY within a let block with variables defined by LET headers."
-  `(eval (list 'let (vzi--extract-let-headers) ,@body)))
+  `(eval (list 'let (vzi--extract-let-headers) '(progn ,@body))))
 
 (defmacro vzi-with-live-buffer (buffer &rest body)
   "Execute BODY within the buffer as current, if live, otherwise ignore.
@@ -240,12 +245,16 @@ Also ensures BODY executes with `read-only-mode' inhibited."
       (let ((table
              (save-excursion
                (goto-char (org-table-begin))
-               (org-table-to-lisp))))
+               (org-table-to-lisp)))
+            (row-select (or vzi-row-select (lambda (row _i) row)))
+            (row-index 0))
         (with-temp-buffer
           (dolist (row table)
             (when (listp row)  ;; to avoid table separators (strings)
-              (insert (mapconcat 'identity row "\t") "\n")))
-          (buffer-string)))
+              (setq row-index (1+ row-index))
+              (when-let (selected-row (funcall row-select row row-index))
+                (insert (mapconcat 'identity row "\t") "\n"))))
+          (buffer-substring-no-properties (point-min) (point-max))))
     (user-error "Not at an org table")))
 
 (defun vzi-send-raw (&optional start end)
@@ -286,14 +295,15 @@ Also ensures BODY executes with `read-only-mode' inhibited."
 (defun vzi-send-table ()
   "Send the org table at point to vzi."
   (interactive)
-  (let ((data (vzi--extract-table)))
     (save-excursion
       (goto-char (org-table-begin))
       (forward-line -1)
       (vzi-eval-with-let-headers
-       `(with-temp-buffer
-          (insert ,data)
-          (vzi-send-raw (point-min) (point-max)))))))
+       (forward-line 1)
+       (let ((data (vzi--extract-table)))
+          (with-temp-buffer
+            (insert data)
+            (vzi-send-raw (point-min) (point-max)))))))
 
 (defun vzi-buffer-to-webkit (&optional buffer)
   "Visit the contents of the buffer using `xwidget-webkit-browse-url'."

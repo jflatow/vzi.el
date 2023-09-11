@@ -24,9 +24,13 @@
     (insert "#+LET: var2 '(\"sexp2\" \"value2\")\n")
     (insert "Some other text here\n")
     (insert "#+LET: var3 '(\"sexp3\" \"value3\")\n")
+    (insert "#+LET: var4 (lambda (x y) (when x y))\n")
+    (insert "#+SKIP\n")
     (let ((var3 nil))
       (vzi-eval-with-let-headers
-       `(should (equal var3 '("sexp3" "value3")))))))
+       (progn
+         (should (equal var3 '("sexp3" "value3")))
+         (should (equal (funcall var4 t 5) 5)))))))
 
 (ert-deftest test-vzi--extract-table ()
   "Test the table extraction."
@@ -39,3 +43,21 @@
      (equal
       (vzi--extract-table)
       "1\tapple\tred\n2\tbanana\tyellow\n3\tgrape\tpurple\n"))))
+
+(ert-deftest test-vzi--extract-table-with-select ()
+  "Test the table extraction with row selection."
+  (with-temp-buffer
+    (insert "| 1 | apple  | red    |\n")
+    (insert "| 2 | banana | yellow |\n")
+    (insert "| 3 | grape  | purple |\n")
+    (forward-line -1)
+    (let ((vzi-row-select (lambda (row i) (when (< i 2) row))))
+      (should
+       (equal
+        (vzi--extract-table)
+        "1\tapple\tred\n")))
+    (let ((vzi-row-select (lambda (row _i) (when (equal (nth 1 row) "banana") row))))
+      (should
+       (equal
+        (vzi--extract-table)
+        "2\tbanana\tyellow\n")))))
