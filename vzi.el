@@ -112,6 +112,16 @@
   "Behaviors of the vzi.el commands."
   :group 'convenience)
 
+(defcustom vzi-keys
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "r") 'vzi-send-raw)
+    (define-key map (kbd "t") 'vzi-send-table)
+    (define-key map (kbd "w") 'vzi-buffer-to-webkit)
+    map)
+  "A customizable keymap for vzi."
+  :type 'keymap
+  :group 'vzi-behaviors)
+
 (defcustom vzi-focus-report nil
   "Whether or not to focus the report window after a call."
   :type 'boolean

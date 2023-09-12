@@ -1,0 +1,27 @@
+# vzi.el
+
+Pipe data from emacs to the browser.
+
+## Install
+
+```elisp
+(use-package vzi
+  :straight (:host github :repo "jflatow/vzi.el")
+  :bind-keymap ("C-c v" . vzi-keys))
+```
+
+## Testing
+
+Run all tests:
+
+```
+make test
+```
+
+Or cool debugging tests workflow:
+
+```
+make test-debug SELECTOR=extract-table
+```
+
+Then use `ert` to debug ('?' for help).
