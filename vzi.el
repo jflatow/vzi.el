@@ -128,7 +128,7 @@
   :group 'vzi-behaviors)
 
 (defcustom vzi-focus-errors t
-  "Whether or not to focus the errors window after a failure."
+  "Whether or not to focus the status window after a failure."
   :type 'boolean
   :group 'vzi-behaviors)
 
@@ -267,6 +267,17 @@ Also ensures BODY executes with `read-only-mode' inhibited."
           (buffer-substring-no-properties (point-min) (point-max))))
     (user-error "Not at an org table")))
 
+(defun vzi--format-command (command)
+  "Format COMMAND for echoing in the status buffer."
+  (concat
+   (car command) " "
+   (mapconcat
+    (lambda (arg)
+      (if (string-prefix-p "-" arg)
+          arg
+        (format "\"%s\"" arg)))
+    (cdr command) " ")))
+
 (defun vzi-send-raw (&optional start end)
   "Send the region or current line to vzi."
   (interactive)
@@ -275,7 +286,7 @@ Also ensures BODY executes with `read-only-mode' inhibited."
          (raw (buffer-substring-no-properties start end))
          (data (if (string-suffix-p "\n" raw) raw (concat raw "\n")))
          (stdout (get-buffer-create "*vzi report*"))
-         (stderr (get-buffer-create "*vzi errors*"))
+         (stderr (get-buffer-create "*vzi status*"))
          (command (cons "vzi" (vzi--make-command-args)))
          (process
           (make-process
@@ -292,7 +303,7 @@ Also ensures BODY executes with `read-only-mode' inhibited."
       (view-mode 1)
       (let ((inhibit-read-only t))
         (goto-char (point-max))
-        (insert "Running: " (mapconcat 'identity command " "))
+        (insert "Running: " (vzi--format-command command))
         (newline)))
     (with-current-buffer stdout
       (view-mode 1)
