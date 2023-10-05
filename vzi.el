@@ -88,6 +88,11 @@
   :type '(choice string (const nil))
   :group 'vzi-flags)
 
+(defcustom vzi-flag-page-local nil
+  "The page-local flag."
+  :type '(choice boolean (const nil))
+  :group 'vzi-flags)
+
 (defcustom vzi-flag-page-token nil
   "The page-token flag."
   :type '(choice string (const nil))
@@ -218,6 +223,8 @@ Also ensures BODY executes with `read-only-mode' inhibited."
       (nconc args (list "-O")))
     (when vzi-flag-output
       (nconc args (list "-o" vzi-flag-output)))
+    (when vzi-flag-page-local
+      (nconc args (list "-l")))
     (when vzi-flag-page-token
       (nconc args (list "-P" vzi-flag-page-token)))
     (when vzi-flag-page-uri
